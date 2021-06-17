@@ -1,4 +1,4 @@
-# mascarilla_detector
+# Reconocimiento de mascarilla
 
 # **Reconocimiento de personas con o sin barbijo**
 
