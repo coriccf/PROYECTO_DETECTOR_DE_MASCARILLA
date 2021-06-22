@@ -3,8 +3,13 @@ import 'package:camera/camera.dart';
 import 'package:mascarilla_detector/main.dart';
 import 'package:tflite/tflite.dart';
 
+import 'package:just_audio/just_audio.dart';
+
+
 
 class HomePage extends StatefulWidget {
+
+
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -22,19 +27,21 @@ class _HomePageState extends State<HomePage> {
     cameraController =  CameraController(camera[0], ResolutionPreset.medium);
     cameraController.initialize().then((value){
       if(!mounted)
-        {
-          return;
-        }
+      {
+        return;
+      }
       setState(() {
         cameraController.startImageStream((imageFromStream)
         {
           if(!isworking)
-            {
-              isworking = true;
-              cameraImage= imageFromStream;
-              runModelOnFrame();
-            }
-      });
+          {
+            isworking = true;
+            cameraImage= imageFromStream;
+            runModelOnFrame();
+
+
+          }
+        });
       });
     });
   }
@@ -58,9 +65,15 @@ class _HomePageState extends State<HomePage> {
       result=" ";
       recognitions.forEach((response) {
         result += response['label']+"\n";
+
+
+
       });
       setState(() {
         //result;
+        print(result);
+
+
       });
       isworking=false;
     }
@@ -69,22 +82,38 @@ class _HomePageState extends State<HomePage> {
   loadModel() async{
     await Tflite.loadModel(model:"modelo/model.tflite",
         labels:"modelo/labels.txt");
-
+    if(result.compareTo("SIN MASCARILLA")!=0){
+      await player.setAsset('modelo/positivo.mp3');
+      player.play();
+    }
+    if(result.compareTo("CON MASCARILLA")!=0){
+      await player.setAsset('modelo/negativo.mp3');
+      player.play();
+    }
   }
+  AudioPlayer player;
 
+  @override
+  void dispose() {
+    player.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
     // TODO: implement setState
     super.initState();
+    player = AudioPlayer();
     initCamera();
     loadModel();
+
   }
 
 
 
   @override
   Widget build(BuildContext context) {
+
     return MaterialApp(
       home: SafeArea(
         child: Scaffold(
@@ -92,30 +121,32 @@ class _HomePageState extends State<HomePage> {
             backgroundColor: Colors.redAccent,
             title: result.isEmpty ? Text('Enfoque el rostro'):
             Padding(padding: EdgeInsets.only(top: 30.0),
-            child: Text(result,
-            style: TextStyle(fontSize: 25),
-            textAlign: TextAlign.center,),),
+              child: Text(result,
+                style: TextStyle(fontSize: 25),
+                textAlign: TextAlign.center,),),
             centerTitle: true,
           ),
+
           body: Container(
-            child: (!cameraController.value.isInitialized)
-            ?Container()
-            : Align(
-              alignment: Alignment.center,
-              child: AspectRatio(
-                aspectRatio: cameraController.value.aspectRatio,
-                child: CameraPreview(cameraController),
+              child: (!cameraController.value.isInitialized)
+                  ?Container()
+                  : Align(
+                alignment: Alignment.center,
+                child: AspectRatio(
+                  aspectRatio: cameraController.value.aspectRatio,
+                  child: CameraPreview(cameraController),
 
 
-              ),
-            )
+                ),
+              )
           ),
           backgroundColor: Colors.black,
 
         ),
 
       ),
-           debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: false,
     );
   }
+
 }
